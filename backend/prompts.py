@@ -24,7 +24,7 @@ def build_rant_prompt(query: str, histories: List[Dict]):
 def build_playlist_generator_prompt(histories, music_taste):
     prompt_history = ""
     if len(histories) != 0:
-        prompt_history = "Based on this past conversation: {histories}"
+        prompt_history = f"Based on this past conversation: {histories}"
 
     prompt = f"""
     You are a music recommendation engine designed to help people through emotional crashes and other negative emotion based on their music taste.
@@ -58,12 +58,30 @@ def build_playlist_generator_prompt(histories, music_taste):
     return prompt
 
 
+def generate_playlist_name(histories, song_info):
+    prompt = f"""
+    Based on this chat history {histories} \n
+    and the generated playlist of songs to help the user {song_info} \n
+    
+    Generate a short title for the playlist (less than equal to five words).
+    Do not include any additional comments or text, only the title of the playlist. 
+    
+    Title:
+    """
+    return prompt
+
+
 def build_explanation(songs, artists, explanations, link):
-    response = f"""The playlist has been generated! Access it here: {link}\n"""
-    for song, artist, explanation in zip(songs, artists, explanations):
-        i = f"""***{song} by {artist}***:
-        {explanation}\n"""
+    structured = {
+        "link": link,
+        "explanations": [
+            {
+                "song": song,
+                "artist": artist,
+                "summary": summary
+            }
+            for song, artist, summary in zip(songs, artists, explanations)
+        ]
+    }
+    return structured
 
-        response += i
-
-    return response

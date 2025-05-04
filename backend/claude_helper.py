@@ -58,17 +58,3 @@ def safe_query_playlist_generator(prompt):
             continue
 
     raise ValueError("Claude failed to return valid JSON after multiple attempts.")
-
-# def safe_query_playlist_generator(prompt):
-#     max_attempt = 3
-#     for attempt in range(max_attempt):
-#         song_info = query_claude(prompt)
-#         try:
-#             parsed = json.loads(song_info)
-#             songs, artists, explanations = parse_songs(parsed)
-#             return songs, artists, explanations
-#         except Exception as e:
-#             print(f"[Retry {attempt + 1}] Invalid format: {e}")
-#             continue
-#
-#     raise ValueError("Claude failed to return valid song info after multiple attempts.")
