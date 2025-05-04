@@ -1,11 +1,12 @@
 # main.py
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from claude_helper import query_claude
+from claude_helper import query_claude, safe_query_playlist_generator
 from spotify_helper import get_music_taste, parse_songs, create_playlist
 from prompts import build_rant_prompt, build_playlist_generator_prompt, build_explanation
 from spotify_auth import get_auth_url, get_tokens
 from fastapi.responses import RedirectResponse
+import json
 
 app = FastAPI()
 
@@ -34,7 +35,8 @@ def callback(code: str):
     return {"access_token": access_token, "refresh_token": refresh_token}
 
 
-chat_history = []
+chat_history = [] # only works with single user - should be enough for prototype :D
+
 
 class LLMQueryRequest(BaseModel):
     prompt: str
@@ -46,10 +48,12 @@ def rant(req: LLMQueryRequest):
     prompt = build_rant_prompt(req.prompt, chat_history)
     try:
         response = query_claude(prompt)
+        print(f"/rant: prompt:\n {prompt}\n")
         chat_history.append({
             "message": req.prompt,
             "response": response
         })
+        print(f"/rant: chat_history:\n {chat_history}\n")
         return {"response": response}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -60,12 +64,15 @@ def generate_playlist():
     global chat_history
     music_taste = get_music_taste()
     song_prompt = build_playlist_generator_prompt(chat_history, music_taste)
+    print(f"/generate: prompt:\n {song_prompt}\n")
     try:
-        song_info = query_claude(song_prompt)
-        songs, explanations = parse_songs(song_info)
-        link = create_playlist(songs)
-
-        explanation = build_explanation(songs, explanations, link)
+        songs, artists, explanations = safe_query_playlist_generator(song_prompt)
+        print(f"/generate: songs:\n {songs}\n")
+        print(f"/generate: artists:\n {artists}\n")
+        print(f"/generate: explanations:\n {explanations}\n")
+        # link = create_playlist(songs)
+        link = "randomlink.com"
+        explanation = build_explanation(songs, artists, explanations, link)
         chat_history = []
         return {"response": explanation}
     except Exception as e:
